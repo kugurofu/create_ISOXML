@@ -13,7 +13,7 @@ import tkinter as tk
 class ProcessedData:
     def __init__(self, top_left_x, top_left_y, top_right_x, top_right_y,
                  bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y,
-                 rows, cols, minxx, minyy):
+                 rows, cols, minxx, minyy, tz_values):
         self.top_left_x = top_left_x
         self.top_left_y = top_left_y
         self.top_right_x = top_right_x
@@ -26,8 +26,9 @@ class ProcessedData:
         self.cols = cols
         self.minxx = minxx
         self.minyy = minyy
+        self.tz_values = tz_values  
 
-def process_and_display(PATH1, PATH2, canvas_frame):    
+def process_and_display(PATH1, PATH2, canvas_frame, default_tz):    
     # Try to repair the shapefile by setting SHAPE_RESTORE_SHX to YES
     with fiona.Env(SHAPE_RESTORE_SHX='YES'):
         # Geopandas でshpを読み込む
@@ -49,32 +50,26 @@ def process_and_display(PATH1, PATH2, canvas_frame):
     # 点群の分類結果を格納するためのリスト
     point_classes = []
 
-    # ポリゴン指定 
-    target_poly2 = gdf_rg[gdf_rg['TZ'] == 2].geometry
-    target_poly1 = gdf_rg[gdf_rg['TZ'] == 1].geometry
-    target_poly3 = gdf_rg[gdf_rg['TZ'] == 3].geometry
-    target_poly4 = gdf_rg[gdf_rg['TZ'] == 4].geometry
-    target_poly5 = gdf_rg[gdf_rg['TZ'] == 5].geometry
-    target_poly254 = gdf_rg[gdf_rg['TZ'] == 254].geometry
+    # `TZ`の種類を取得
+    unique_tz_values = sorted(gdf_rg['TZ'].unique())  # ユニーク値をソートしてリスト化
+    print("検出されたTZの種類:", unique_tz_values)
+
+    # ユーザーが指定した `default_tz` をリストに追加
+    tz_values = sorted(set(unique_tz_values + [default_tz]))
+
+    # 各TZに対応するポリゴンを辞書に格納
+    target_polygons = {tz: gdf_rg[gdf_rg['TZ'] == tz].geometry for tz in tz_values}
 
     # 各点について分類を行う
     for i in range(len(gdf_pt)):
         temp = gdf_pt['geometry'][i]
         lat, lon = epsg2455_to_epsg4326.transform(temp.y, temp.x)
         point = shapely.geometry.point.Point(lon, lat)
+
+        # ポリゴン内にあるか判定
+        assigned_tz = next((tz for tz, poly in target_polygons.items() if any(poly.contains(point))), default_tz)
     
-        if any(target_poly1.contains(point)):
-            point_classes.append(1)
-        elif any(target_poly2.contains(point)):
-            point_classes.append(2)
-        elif any(target_poly3.contains(point)):
-            point_classes.append(3)
-        elif any(target_poly4.contains(point)):
-            point_classes.append(4)
-        elif any(target_poly5.contains(point)):
-            point_classes.append(5)
-        else:
-            point_classes.append(254)
+        point_classes.append(assigned_tz)  
 
     # グリッドの境界を使用して行数と列数を計算
     minx, miny, maxx, maxy = gdf_pt.total_bounds
@@ -88,8 +83,8 @@ def process_and_display(PATH1, PATH2, canvas_frame):
 
     # 並び替え
     data2D = np.array(point_classes).reshape(rows, cols)
-    data2D[data2D == 254] = 0
-    point_classes = [0 if x==254 else x for x in point_classes]
+    #data2D[data2D == default_tz] = 0
+    point_classes = [0 if x==default_tz else x for x in point_classes]
     data2D_rotate = np.rot90(data2D)
 
     # 可視化
@@ -123,7 +118,7 @@ def process_and_display(PATH1, PATH2, canvas_frame):
         gdf_pt = gdf_pt.to_crs(epsg=4326)
 
     # 対象となる地物をフィルタリング
-    selected_gdf = gdf_rg[gdf_rg['TZ'].isin(selected_feature_ids)]
+    selected_gdf = gdf_rg[gdf_rg['TZ'].isin(unique_tz_values)]
 
     # 各フィーチャのジオメトリから頂点座標を取得
     for geom in selected_gdf.geometry:
@@ -177,6 +172,6 @@ def process_and_display(PATH1, PATH2, canvas_frame):
     processed_data = ProcessedData(
         top_left_x, top_left_y, top_right_x, top_right_y,
         bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y,
-        rows, cols, minxx, minyy
+        rows, cols, minxx, minyy, tz_values
     )
     return processed_data

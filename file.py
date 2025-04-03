@@ -13,7 +13,8 @@ def open_files(canvas_frame):
         print(f"選択されたファイル2: {file_path2}")
 
         # ユーザーにTZ値を入力させる
-        default_tz = simpledialog.askinteger("圃場外TZ", "圃場外領域のTZ値を決めてください:", minvalue=1, maxvalue=999)
+        default_tz = 254
+        # default_tz = simpledialog.askinteger("圃場外TZ", "圃場外領域のTZ値を決めてください:", minvalue=1, maxvalue=999)
     
         if default_tz is None:
             return  # ユーザーがキャンセルした場合は処理を中断

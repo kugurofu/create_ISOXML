@@ -70,6 +70,7 @@ def main():
             return
         
         tz_values_input = {tz: entries[tz].get() for tz in entries}
+        print(tz_values_input)
         
         save_xml(
             tz_values_input,

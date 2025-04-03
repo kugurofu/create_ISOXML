@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import zipfile
 
-def save_xml(tz_values,processed_data, rows, cols, minxx, minyy, 
+def save_xml(tz_values_input,processed_data, rows, cols, minxx, minyy, 
              bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y, 
              top_left_x, top_left_y, top_right_x, top_right_y):
     MaxX = max(top_left_x, top_right_x, bottom_left_x, bottom_right_x)
@@ -62,10 +62,10 @@ def save_xml(tz_values,processed_data, rows, cols, minxx, minyy,
     elem19.set('D','1000')
     
     # TZの値を設定する
-    for i, value in enumerate(tz_values):
+    for tz, value in tz_values_input.items():
         elem_tz = ET.SubElement(elem15, 'TZN')
-        elem_tz.set('A', str(i+1))
-        elem_tz.set('B', str(i+1))
+        elem_tz.set('A', str(tz))
+        elem_tz.set('B', str(tz))
         elem_pdv = ET.SubElement(elem_tz, 'PDV')
         elem_pdv.set('A', '0010')
         elem_pdv.set('B', str(value))
@@ -73,13 +73,13 @@ def save_xml(tz_values,processed_data, rows, cols, minxx, minyy,
         elem_pdv.set('E', 'VPN1')
 
     # 最後のTZN要素
-    elem26 = ET.SubElement(elem15, 'TZN')
-    elem26.set('A', '0')
-    elem27 = ET.SubElement(elem26, 'PDV')
-    elem27.set('A', '0010')
-    elem27.set('B', '1')
-    elem27.set('C', 'PDT1')
-    elem27.set('E', 'VPN1')
+    #elem26 = ET.SubElement(elem15, 'TZN')
+    #elem26.set('A', '254')
+    #elem27 = ET.SubElement(elem26, 'PDV')
+    #elem27.set('A', '0010')
+    #elem27.set('B', '1')
+    #elem27.set('C', 'PDT1')
+    #elem27.set('E', 'VPN1')
     elem30 = ET.SubElement(elem15, 'GRD')
     elem30.set('A', str(minyy))
     elem30.set('B', str(minxx))

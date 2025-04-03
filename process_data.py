@@ -83,7 +83,7 @@ def process_and_display(PATH1, PATH2, canvas_frame, default_tz):
 
     # 並び替え
     data2D = np.array(point_classes).reshape(rows, cols)
-    #data2D[data2D == default_tz] = 0
+    data2D[data2D == default_tz] = 0
     point_classes = [0 if x==default_tz else x for x in point_classes]
     data2D_rotate = np.rot90(data2D)
 

@@ -76,8 +76,12 @@ def process_and_display(PATH1, PATH2, canvas_frame, default_tz):
     num_cells = len(gdf_pt)
     cell_width = maxx - minx
     cell_height = maxy - miny
-    cols = int(np.sqrt(num_cells * (cell_height / cell_width)))
-    rows = num_cells // cols
+    x_coords = sorted(set(pt.x for pt in gdf_pt.geometry))
+    y_coords = sorted(set(pt.y for pt in gdf_pt.geometry))
+    cols = len(y_coords)
+    rows = len(x_coords)
+    #cols = int(np.sqrt(num_cells * (cell_height / cell_width)))
+    #rows = num_cells // cols
     print(rows)
     print(cols)
 

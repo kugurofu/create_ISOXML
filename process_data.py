@@ -13,7 +13,7 @@ import tkinter as tk
 class ProcessedData:
     def __init__(self, top_left_x, top_left_y, top_right_x, top_right_y,
                  bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y,
-                 rows, cols, minxx, minyy, tz_values):
+                 rows, cols, minxx, minyy, maxxx, maxyy, minx_rg, miny_rg, maxx_rg, maxy_rg, tz_values):
         self.top_left_x = top_left_x
         self.top_left_y = top_left_y
         self.top_right_x = top_right_x
@@ -26,6 +26,12 @@ class ProcessedData:
         self.cols = cols
         self.minxx = minxx
         self.minyy = minyy
+        self.maxxx = maxxx
+        self.maxyy = maxyy
+        self.minx_rg = minx_rg
+        self.miny_rg = miny_rg
+        self.maxx_rg = maxx_rg
+        self.maxy_rg = maxy_rg
         self.tz_values = tz_values  
 
 def process_and_display(PATH1, PATH2, canvas_frame, default_tz):    
@@ -72,6 +78,7 @@ def process_and_display(PATH1, PATH2, canvas_frame, default_tz):
         point_classes.append(assigned_tz)  
 
     # グリッドの境界を使用して行数と列数を計算
+    minx_rg, miny_rg, maxx_rg, maxy_rg = gdf_rg.total_bounds
     minx, miny, maxx, maxy = gdf_pt.total_bounds
     num_cells = len(gdf_pt)
     cell_width = maxx - minx
@@ -131,7 +138,7 @@ def process_and_display(PATH1, PATH2, canvas_frame, default_tz):
         if geom.geom_type == 'Polygon':
             vertices = list(geom.exterior.coords)
         elif geom.geom_type == 'MultiPolygon':
-            vertices = [point for poly in geom for point in poly.exterior.coords]
+            vertices = [point for poly in geom.geoms for point in poly.exterior.coords]
         selected_vertices.extend(vertices)
 
     # 重複を排除
@@ -166,16 +173,18 @@ def process_and_display(PATH1, PATH2, canvas_frame, default_tz):
     print(f"Bottom Right: ({bottom_right_x}, {bottom_right_y})")
     print(f"Bottom Left: ({bottom_left_x}, {bottom_left_y})")
 
-    minyy, minxx =epsg2455_to_epsg4326.transform(miny, minx)
+    minyy, minxx=epsg2455_to_epsg4326.transform(miny, minx)
+    maxyy, maxxx=epsg2455_to_epsg4326.transform(maxy, maxx)
 
     # バイナリファイルとして保存
     binary_data = np.array(data2D_rotate, dtype=np.uint8)
+    binary_data[binary_data == 0] = 254  # 可視化用に0にしたものを元に戻す
     binary_data.tofile('GRD00001.bin')
 
      # `ProcessedData`オブジェクトを作成し、必要なデータを保持
     processed_data = ProcessedData(
         top_left_x, top_left_y, top_right_x, top_right_y,
         bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y,
-        rows, cols, minxx, minyy, tz_values
+        rows, cols, minxx, minyy, maxxx, maxyy, minx_rg, miny_rg, maxx_rg, maxy_rg, tz_values
     )
     return processed_data
